@@ -1,2 +1,2 @@
 # Digital-Electronics-2
-This is the final project of Digital Electronics.
+This is the Digital Electronics final project
