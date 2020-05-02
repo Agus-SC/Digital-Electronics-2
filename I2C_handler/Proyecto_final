@@ -1,0 +1,85 @@
+
+/*Registros canal 0 (cero) I2C
+*/
+#define i2c0_base 0x400A1000
+
+#define i2c0_CONSET 0x000
+#define i2c0_STAT 0x004
+#define i2c0_DAT 0x008
+#define i2c0_ADR0 0x00C
+#define i2c0_SCLH 0x010
+#define i2c0_SCLL 0x014
+#define i2c0_CONCLR 0x018
+#define i2c0_MMCTRL 0x01C
+#define i2c0_ADR1 0x020
+#define i2c0_ADR2 0x024
+#define i2c0_ADR3 0x028
+#define i2c0_DATA_BUFFER 0x02C
+#define i2c0_MASK0 0x030
+#define i2c0_MASK1 0x034
+#define i2c0_MASK2 0x038
+#define i2c0_MASK3 0x03C
+
+/*Registros canal 1 (uno) I2C*/
+
+#define i2c0_base 0x400E0000
+
+#define i2c1_CONSET 0x000
+#define i2c1_STAT 0x004
+#define i2c1_DAT 0x008
+#define i2c1_ADR0 0x00C
+#define i2c1_SCLH 0x010
+#define i2c1_SCLL 0x014
+#define i2c1_CONCLR 0x018
+#define i2c1_MMCTRL 0x01C
+#define i2c1_ADR1 0x020
+#define i2c1_ADR2 0x024
+#define i2c1_ADR3 0x028
+#define i2c1_DATA_BUFFER 0x02C
+#define i2c1_MASK0 0x030
+#define i2c1_MASK1 0x034
+#define i2c1_MASK2 0x038
+#define i2c1_MASK3 0x03C
+
+/*Macros.*/
+
+/*Flags del control set register*/
+#define CONSET_AA 0x04 /*100 en binario*/
+#define CONSET_SI 0x08 /*1000 en binario*/
+#define CONSET_STO 0x10 /*10000 en binario*/
+#define CONSET_STA 0x20 /*100000 en binario*/
+#define CONSET_I2EN 0x40 /*1000000 en binario*/
+
+/*Registro STAT. Solo de lectura*/
+#define STAT_MASK 0xF8 /*11111000 en binario*/
+
+/*Registro DAT.*/
+#define DATA_MASK 0xFF /*11111111 en binario. Para que al comparar me quede el dato que tengo*/
+
+/*Registros ADR*/
+#define ADR_GC (1 << 0)
+#define ADR_MASK 0xFF /*11111111*/
+
+/*Registros SCL high y low. Para definir la forma del clk*/
+#define SCLH_MASK 0xFFFF
+#define SCLL_MASK 0xFFFF
+
+/*Flags del control clear register*/
+#define CONSET_AA_C 0x04 /*100 en binario*/
+#define CONSET_SI_C 0x08 /*1000 en binario*/
+/*#define CONSET_STO_C 0x10 /*10000 en binario*/
+#define CONSET_STA_C 0x20 /*100000 en binario*/
+#define CONSET_I2EN_C 0x40 /*1000000 en binario*/
+
+/*Flags de monitoreo*/
+#define MMCTRL_ENA (1 << 0)
+#define MMCTRL_ENA_SCL (1 << 1)
+#define MMCTRL_MATCH_ALL (1 << 2)
+/*MMCTRL_MASK 0x07*/
+
+/*Buffer*/
+#define BUFFER_MASK 0xFF
+
+/*Masks*/
+/*#define MASK_MASK(n) (n & 0xFE)*/
+
