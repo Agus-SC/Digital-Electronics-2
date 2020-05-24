@@ -1,48 +1,38 @@
 
-/*Registros canal 0 (cero) I2C
-*/
-#define i2c0_base           0x400A1000
+/* Tipo de datos */ 
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
 
-#define i2c0_CONSET         0x000
-#define i2c0_STAT           0x004
-#define i2c0_DAT            0x008
-#define i2c0_ADR0           0x00C
-#define i2c0_SCLH           0x010
-#define i2c0_SCLL           0x014
-#define i2c0_CONCLR         0x018
-#define i2c0_MMCTRL         0x01C
-#define i2c0_ADR1           0x020
-#define i2c0_ADR2           0x024
-#define i2c0_ADR3           0x028
-#define i2c0_DATA_BUFFER    0x02C
-#define i2c0_MASK0          0x030
-#define i2c0_MASK1          0x034
-#define i2c0_MASK2          0x038
-#define i2c0_MASK3          0x03C
+typedef _Bool bool;
 
-/*Registros canal 1 (uno) I2C*/
+#define	false	0
+#define	true	1
 
-#define i2c0_base           0x400E0000
+/* Registros canal 0 (cero) I2C */
 
-#define i2c1_CONSET         0x000
-#define i2c1_STAT           0x004
-#define i2c1_DAT            0x008
-#define i2c1_ADR0           0x00C
-#define i2c1_SCLH           0x010
-#define i2c1_SCLL           0x014
-#define i2c1_CONCLR         0x018
-#define i2c1_MMCTRL         0x01C
-#define i2c1_ADR1           0x020
-#define i2c1_ADR2           0x024
-#define i2c1_ADR3           0x028
-#define i2c1_DATA_BUFFER    0x02C
-#define i2c1_MASK0          0x030
-#define i2c1_MASK1          0x034
-#define i2c1_MASK2          0x038
-#define i2c1_MASK3          0x03C
+#define I2C0_REGISTERS        ((I2C_T  *)  0x400A1000)
+#define I2C1_REGISTERS        ((I2C_T  *)  0x400E0000)
+
+typedef struct {
+	uint32_t CONSET;	
+	uint32_t STAT;	
+	uint32_t DAT;
+	uint32_t ADR0;
+	uint32_t SCLH;
+	uint32_t SCLL;
+	uint32_t CONCLR;	
+	uint32_t MMCTRL;
+	uint32_t ADR1;
+    uint32_t ADR2;
+    uint32_t ADR3;
+	uint32_t DATA_BUFFER;
+	uint32_t MASK[4];     
+
+} I2C_T;
 
 /*Macros.*/
-
+/*Escribir todas las configuraciones de los registros*/
 /*Flags del control set register*/
 #define CONSET_AA           0x04 /*100 en binario*/
 #define CONSET_SI           0x08 /*1000 en binario*/
@@ -83,3 +73,17 @@
 /*Masks*/
 /*#define MASK_MASK(n) (n & 0xFE)*/
 
+typedef struct{
+    uint8_t SLAVE_ADDR;
+    uint8_t *Tx_BUFFER;
+    int Tx_SIZE; 
+}MasterTransfer_TMsg;
+
+typedef struct{
+    uint8_t *Rx_BUFFER;
+    int Rx_SIZE; 
+}MasterTransfer_RMsg;
+
+bool I2C_Master_Transfer(){
+
+}

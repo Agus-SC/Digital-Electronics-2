@@ -21,14 +21,17 @@ int main(void)
 
 	while (!xflag) {
 		switch (i2c_menu()) {
-		case 0:
+		case 0: /* Finaliza la transferencia*/
 			xflag = 1;
 			DEBUGOUT("End of I2C Demo! Bye!\r\n");
 			break;
 
-		case 1:
+		case 1: /*Se fija que interfaz se va utilizar, */
 			tmp = con_get_input("Select I2C device [0 or 1] : ");
+			/*Le pide al usuario que seleccione que interfaz usar*/
 			DEBUGOUT("\r\n");
+			/* si es la cero se fija que este disponible y si lo esta setea el modo de operacion
+			en polling y se lo asigna a la variable i2cDev*/
 			if ((I2C_ID_T) tmp == I2C0) {
 				if (i2cDev == I2C0) {
 					break;
@@ -36,6 +39,7 @@ int main(void)
 				i2c_set_mode(I2C0, 0);
 				i2cDev = I2C0;
 			}
+			/*Idem para la interfaz 1*/
 			else if ((I2C_ID_T) tmp == I2C1) {
 				if (i2cDev == I2C1) {
 					break;
