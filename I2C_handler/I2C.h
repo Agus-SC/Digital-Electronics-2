@@ -108,7 +108,7 @@ void send_START(I2C_T *pI2C){
 
 /* Funcion que lee el registro STATUS */
 void get_STATUS(I2C_T *pI2C){
-    return (uint32_t) pI2C -> STAT & MASK_STAT;
+    return (uint32_t) pI2C -> STAT & MASK_STAT ;
 } 
 
 /* Maquina de estado para transmit Master Mode */
@@ -120,7 +120,7 @@ void TransmitMasterMode(I2C_T *pI2C, Master_T *Mstruct){
             /* Bus Error. Enter not addressed Slave mode and release bus */
             pI2C -> CONSET = 0x14 ; // set STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
+            break ;
 
         case 0x08:
             /* A START condition has been transmitted. The Slave Address
@@ -128,7 +128,8 @@ void TransmitMasterMode(I2C_T *pI2C, Master_T *Mstruct){
             pI2C -> DAT = ( Mstruct -> SLAVE_ADDR ) | WRITE ; // write Slave address with W bit to DAT
             pI2C -> CONSET = 0x04 ; // set the AA bit
             pI2C -> CONCLR = 0x08 ; // clear SI flag 
-            /*Con los buffers ya cargados*/
+            // Los buffers los cargamos en previamente 
+            break ;
 
         case 0x10:
             /*A Repeated START condition has been transmitted. The Slave 
@@ -136,34 +137,77 @@ void TransmitMasterMode(I2C_T *pI2C, Master_T *Mstruct){
             pI2C -> DAT = ( Mstruct -> SLAVE_ADDR ) | WRITE ; // write Slave address with W bit to DAT
             pI2C -> CONSET = 0x04 ; // set the AA bit
             pI2C -> CONCLR = 0x08 ; // clear SI flag  
-            /* Ver bien como cargar los buffers */
+            // Los buffers los cargamos en previamente 
+            break ;
             
         /* Transmitter Mode */
         case 0x18:
             /* Previous state was State 8 or State 10, Slave Address + Write 
             has been transmitted, ACK has been received. The first data byte 
             will be transmitted, an ACK bit will be received. */
-
+            if (Mstruct -> Tx_SIZE != 0 ){
+                // si no quiero transmitir y quiero recibir manda un START condition
+                if (Mstruct -> Rx_SIZE){
+                    // CON PINZAS
+                    pI2C -> CONSET = 1 << 5 ; // set STA
+                    pI2C -> CONCLR = 1 << 2 | 1 << 3 ; // clear AA and SI 
+                    break ;
+                }
+                // si no quiero transmitir y no quiero recibir mando un STOP condition
+                else{
+                    pI2C -> CONSET = 0x14 ; // set STO and AA
+                    pI2C -> CONCLR = 0x08 ; // clear SI 
+                    break ;
+                }           
+            }
+            else{
+                pI2C -> DAT = ( *Mstruct -> Tx_BUFFER++ ) ;
+                Mstruct -> Tx_SIZE-- ;  
+                pI2C -> CONSET = 0x04 ; // set the AA bit
+                pI2C -> CONCLR = 0x08 ; // clear SI flag
+                break ;
+            }
+            
         case 0x20:
             /* Slave Address + Write has been transmitted, NOT ACK has been 
             received. A STOP condition will be transmitted. */
             pI2C -> CONSET = 0x14 ; // set STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
+            break ;
 
         case 0x28:
             /* Data has been transmitted, ACK has been received. If the transmitted
             data was the last data byte then transmit a STOP condition, otherwise 
             transmit the next data byte. */
-            /* Ver bien como cargar los buffers */
-            /* y ver como separar en los casos. */
+            if (Mstruct -> Tx_SIZE != 0 ){
+                // si no quiero transmitir y quiero recibir manda un START condition
+                if (Mstruct -> Rx_SIZE){
+                    // CON PINZAS
+                    pI2C -> CONSET = 1 << 5 ; // set STA
+                    pI2C -> CONCLR = 1 << 2 | 1 << 3 ; // clear AA and SI 
+                    break ;
+                }
+                // si no quiero transmitir y no quiero recibir mando un STOP condition
+                else{
+                    pI2C -> CONSET = 0x14 ; // set STO and AA
+                    pI2C -> CONCLR = 0x08 ; // clear SI 
+                    break ;
+                }           
+            }
+            else{
+                pI2C -> DAT = ( *Mstruct -> Tx_BUFFER++ ) ;
+                Mstruct -> Tx_SIZE-- ;  
+                pI2C -> CONSET = 0x04 ; // set the AA bit
+                pI2C -> CONCLR = 0x08 ; // clear SI flag
+                break ;
+            }   
 
         case 0x30:
             /* Data has been transmitted, NOT ACK received. A STOP condition will 
             be transmitted. */
             pI2C -> CONSET = 0x14 ; // set STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
+            break ;
 
         case 0x38:
             /* Arbitration has been lost during Slave Address + Write or data. 
@@ -171,59 +215,33 @@ void TransmitMasterMode(I2C_T *pI2C, Master_T *Mstruct){
             A new START condition will be transmitted when the bus is free again. */
             pI2C -> CONSET = 0x24 ; // set the STA and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break 
-
-    }
-
-}
-
-/* Maquina de estado para receive Master Mode */
-void ReceiveMasterMode(I2C_T *pI2C, Master_T *Mstruct){
-
-    switch(get_STATUS(pI2C)){
+            break ;
         
-        case 0x00:
-            /* Bus Error. Enter not addressed Slave mode and release bus */
-            pI2C -> CONSET = 0x14 ; // set STO and AA bits
-            pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
-        case 0x08:
-            /* A START condition has been transmitted. The Slave Address
-            + R/W bit will be transmitted, an ACK bit will be received. */
-            pI2C -> DAT = ( Mstruct -> SLAVE_ADDR ) | WRITE ; // write Slave address with W bit to DAT
-            pI2C -> CONSET = 0x04 ; // set the AA bit
-            pI2C -> CONCLR = 0x08 ; // clear SI flag 
-            /*Ver bien como cargar los buffers*/
-            /*y ver como separar en los casos.*/
-
-        case 0x10:
-            /*A Repeated START condition has been transmitted. The Slave 
-            Address + R/W bit will be transmitted, an ACK bit will be received.*/
-            pI2C -> DAT = ( Mstruct -> SLAVE_ADDR ) | WRITE ; // write Slave address with W bit to DAT
-            pI2C -> CONSET = 0x04 ; // set the AA bit
-            pI2C -> CONCLR = 0x08 ; // clear SI flag  
-            /* Ver bien como cargar los buffers */
-            /* y ver como separar en los casos. */
-
-        /* Reciver Mode */
+         /* Reciver Mode */
         case 0x40:
             /* Previous state was State 08 or State 10. Slave Address + Read has
             been transmitted, ACK has been received. Data will be received and ACK returned. */
             pI2C -> CONSET = 0x04 ; // set the AA bit
             pI2C -> CONCLR = 0x08 ; // clear the SI flag
-            break
+            break ;
 
         case 0x48:
             /* Slave Address + Read has been transmitted, NOT ACK has been received. A STOP
             condition will be transmitted. */
             pI2C -> CONSET = 0x14 ; // set the STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
+            break ;
 
         case 0x50:
             /* Data has been received, ACK has been returned. Data will be read from DAT. Additional
             data will be received. If this is the last data byte then NOT ACK will be returned, otherwise
             ACK will be returned. */
+            *Mstruct -> Rx_BUFFER++ = ( pI2C -> DAT ) & MASK_DAT ;
+            Mstruct -> Rx_SIZE-- ;
+            pI2C -> CONCLR = 0x0C ;
+            pI2C -> CONSET = 0x04 ; // set the AA bit
+            pI2C -> CONCLR = 0x08 ; // clear the SI flag
+            break ;
 
         case 0x58:
             /* Data has been received, NOT ACK has been returned. Data will be read from DAT.
@@ -231,11 +249,12 @@ void ReceiveMasterMode(I2C_T *pI2C, Master_T *Mstruct){
             Mstruct -> Rx_BUFFER = ( pI2C -> DAT ) & MASK_DAT ;
             pI2C -> CONSET = 0x14 ; // set the STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
-            break
+            break ;
 
     }
 
 }
+
 
 // void I2CM_Xfer(LPC_I2C_T *pI2C, I2CM_XFER_T *xfer)
 // {
