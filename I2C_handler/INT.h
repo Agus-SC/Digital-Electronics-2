@@ -57,7 +57,7 @@ uint32_t *PINTSEL0 = (uint32_t *)(SCU_BASE + PINTSEL0_OFFSET) ;
 uint32_t *PINTSEL1 = (uint32_t *)(SCU_BASE + PINTSEL1_OFFSET) ;
 
 /* Funcion para configurar una determinada tecla como interrupcion */
-void TEC_interrupt(uint8_t TEC){
+void init_TEC_interrupt(uint8_t TEC){
     switch(TEC){
         case 1:
             /* 
@@ -101,19 +101,22 @@ void TEC_interrupt(uint8_t TEC){
 
         default:
             break;
-
     }
     /* Configuramos las teclas sensibles a flancos */
-    GPIO_PINT_REGISTERS -> ISEL = (0x0 << 0) ;
+    GPIO_PINT_REGISTERS -> ISEL = (0x0) ;
     /* Configuramos las teclas sensibles a flancos descendentes por que trabajamos con pull-up*/
-    GPIO_PINT_REGISTERS -> IENR = (0x0 << 0) ;
-    GPIO_PINT_REGISTERS -> SIENR = (0x0 << 0) ;
-    GPIO_PINT_REGISTERS -> IENF = (0x1 << 0 ) ; 
-    
-
+    GPIO_PINT_REGISTERS -> IENR = (0x0) ;
+    GPIO_PINT_REGISTERS -> SIENR = (0x0) ;
+    GPIO_PINT_REGISTERS -> IENF = (0x1 << 3) | (0x1 << 2) | (0x1 << 1) | (0x1 << 0) ; 
+    GPIO_PINT_REGISTERS -> SIENF = (0x1 << 3) | (0x1 << 2) | (0x1 << 1) | (0x1 << 0) ;
 }
 
 /* Funcion para configurar las interfaces I2C como interrupcion */
-void I2C_interrupt(uint8_t interface){
-
+void init_I2C_interrupt(uint8_t interface){
+    if(interface == 0){
+        *ISER0 |= (0x1 << 18) ; 
+    }
+    else{
+        *ISER0 |= (0x1 << 19) ;
+    }
 }

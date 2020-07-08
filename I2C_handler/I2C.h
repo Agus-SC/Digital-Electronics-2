@@ -253,6 +253,7 @@ int ComMasterMode(I2C_T *pI2C, MS_T *Xstruct){
             /* Data has been received, ACK has been returned. Data will be read from DAT. Additional
             data will be received. If this is the last data byte then NOT ACK will be returned, otherwise
             ACK will be returned. */
+            // Pointer moves to the next int position (as if it was an array). But returns the old content
             *Xstruct -> Rx_BUFFER++ = ( pI2C -> DAT ) & MASK_DAT ;
             Xstruct -> Rx_SIZE-- ;
             pI2C -> CONCLR = 0x0C ;
@@ -263,7 +264,7 @@ int ComMasterMode(I2C_T *pI2C, MS_T *Xstruct){
         case 0x58:
             /* Data has been received, NOT ACK has been returned. Data will be read from DAT.
             A STOP condition will be transmitted. */
-            Xstruct -> Rx_BUFFER = ( pI2C -> DAT ) & MASK_DAT ;
+            *Xstruct -> Rx_BUFFER = ( pI2C -> DAT ) & MASK_DAT ;
             pI2C -> CONSET = 0x14 ; // set the STO and AA bits
             pI2C -> CONCLR = 0x08 ; // clear SI flag
             if (Xstruct -> STATUS == I2C_STATUS_BUSY ){
@@ -416,9 +417,19 @@ void ComSlaveMode(I2C_T *pI2C, MS_T *Xstruct){
 
 -MASTER SLAVE FUNCTIONS 
 
--CLK
--INICIALIZAR LOS PINES
--NVIC 
-
 */
 
+/*
+
+1. Chip_I2C_SetMasterEventHandler(id, Chip_I2C_EventHandler);
+como afecta esto al resto? porque hay que hacerlo? no la usan
+
+2.
+void I2C0_IRQHandler(void)
+{
+	Call I2CM ISR function with the I2C device and transfer rec 
+	Chip_I2CM_XferHandler(LPC_I2C0, &i2cmXferRec);
+    esta funcion es la maquina de estados.
+}
+
+*/

@@ -1,4 +1,5 @@
-/****************************** Inicializacion LEDS ******************************/
+/* Inicializacion LEDS */
+
 /* Tipo de datos */ 
 typedef unsigned char uint8_t ;
 typedef unsigned short uint16_t ;
@@ -64,23 +65,24 @@ uint32_t *CLR0 = ( uint32_t* )(( GPIO_PORT_BASE ) + ( CLR0_OFFSET ) ) ;
 uint32_t *CLR1 = ( uint32_t* )(( GPIO_PORT_BASE ) + ( CLR1_OFFSET ) ) ;
 uint32_t *CLR5 = ( uint32_t* )(( GPIO_PORT_BASE ) + ( CLR5_OFFSET ) ) ;
 
+/*Inicializa todos los leds como salida*/
 void LEDs_init(void){
     /*
     Configuramos la funcion 4
     Deshabilitamos pull down
     Habilitmos pull up
     */
-    *SFSP2_0 |= (1 << 3) | (0x4) ;
-    *SFSP2_1 |= (1 << 3) | (0x4) ;
-    *SFSP2_2 |= (1 << 3) | (0x4) ;
+    *SFSP2_0 |= (0x0 << 4) | (0x0 << 3) | (0x4) ;
+    *SFSP2_1 |= (0x0 << 4) | (0x0 << 3) | (0x4) ;
+    *SFSP2_2 |= (0x0 << 4) | (0x0 << 3) | (0x4) ;
     /*
     Configuramos la funcion 0
     Deshabilitamos pull down
     Habilitmos pull up
     */
-    *SFSP2_10 |= (1 << 3) | (0x0) ;
-    *SFSP2_11 |= (1 << 3) | (0x0) ;
-    *SFSP2_12 |= (1 << 3) | (0x0) ;
+    *SFSP2_10 |= (0x0 << 4) | (0x0 << 3) | (0x0) ;
+    *SFSP2_11 |= (0x0 << 4) | (0x0 << 3) | (0x0) ;
+    *SFSP2_12 |= (0x0 << 4) | (0x0 << 3) | (0x0) ;
     /*
     Configuramos los pines como salida
     */
@@ -91,9 +93,9 @@ void LEDs_init(void){
     *CLR0 |= (0x1 << 14) ;
     *CLR1 |= (0x1 << 12) | (0x1 << 11)  ;
     *CLR5 |= (0x1 << 2) | (0x1 << 1) | (0x1 << 0) ;
-
 }
 
+/* Enciende el LED ingresado 0 = RED, 1 = GREEN, 2 = BLUE, 3 = 1, 4 = 2, 5 = 3*/
 void LEDs_set(uint8_t LED){
     switch(LED){
 
@@ -128,8 +130,44 @@ void LEDs_set(uint8_t LED){
             break ;
         
         default:
+            break ;   
+    }
+}
+
+void LEDs_clr(uint8_t LED){
+    switch(LED){
+
+        case 0: 
+            /*CLR LED RED*/
+            *CLR5 |= (0x1 << 0) ;
+            break ;
+
+        case 1:
+            /*CLR LED GREEN*/
+            *CLR5 |= (0x1 << 1) ;
+            break ;
+
+        case 2:
+            /*CLR LED BLUE*/
+            *CLR5 |= (0x1 << 2) ;
+            break ;
+         
+        case 3:
+            /*CLR LED 1*/
+            *CLR0 |= (0x1 << 14) ;
             break ;
         
+        case 4:
+            /*CLR LED 2*/
+            *CLR1 |= (0x1 << 11) ;
+            break ;
+        
+        case 5:
+            /*CLR LED 3*/
+            *CLR1 |= (0x1 << 12) ;
+            break ;
+        
+        default:
+            break ;       
     }
-
 }
