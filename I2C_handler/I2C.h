@@ -1,10 +1,10 @@
 
 /* Tipo de datos */ 
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
+typedef unsigned char uint8_t ;
+typedef unsigned short uint16_t ;
+typedef unsigned int uint32_t ;
 
-typedef bool _bool;
+typedef bool _bool ;
 #define	false	0
 #define	true	1
 
@@ -270,7 +270,6 @@ int ComMasterMode(I2C_T *pI2C, MS_T *Xstruct){
                 Xstruct -> STATUS = I2C_STATUS_DONE ;
             }
             return 0 ;
-
     }
 return 1 ;
 }
