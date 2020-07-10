@@ -1,3 +1,4 @@
+#include "I2C.h"
 /* Inicializacion del clock e interfaz de I2C */
 
 /* Tipo de datos */ 

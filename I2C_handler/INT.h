@@ -111,6 +111,30 @@ void init_TEC_interrupt(uint8_t TEC){
     GPIO_PINT_REGISTERS -> SIENF = (0x1 << 3) | (0x1 << 2) | (0x1 << 1) | (0x1 << 0) ;
 }
 
+/*  Clear Registro IST  */
+void clear_IST(uint8_t TEC){
+    switch(TEC){
+        case 1:
+            GPIO_PINT_REGISTERS -> IST =  (0x1 << 0) ; 
+            break ;
+
+        case 2:
+            GPIO_PINT_REGISTERS -> IST = (0x1 << 1) ; 
+            break ;
+
+        case 3:
+            GPIO_PINT_REGISTERS -> IST = (0x1 << 2) ;  
+            break ;
+
+        case 4:
+            GPIO_PINT_REGISTERS -> IST = (0x1 << 3) ; 
+            break ;
+
+        default:
+            break;
+    }
+}
+
 /* Funcion para configurar las interfaces I2C como interrupcion */
 void init_I2C_interrupt(uint8_t interface){
     if(interface == 0){
