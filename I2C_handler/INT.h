@@ -49,8 +49,8 @@ typedef struct{
 #define PINTSEL1_OFFSET     0xE04
 
 /* Definicion de los punteros a los registros del NVIC ISER */
-uint32_t *ISER0 = (uint32_t *)(SCU_BASE + ISER0_OFFSET) ; 
-uint32_t *ISER1 = (uint32_t *)(SCU_BASE + ISER1_OFFSET) ;
+uint32_t *ISER0 = (uint32_t *)(NVIC_BASE + ISER0_OFFSET) ; 
+uint32_t *ISER1 = (uint32_t *)(NVIC_BASE + ISER1_OFFSET) ;
 
 /* Definicion de los punteros a los registros del SCU PINTSEL*/
 uint32_t *PINTSEL0 = (uint32_t *)(SCU_BASE + PINTSEL0_OFFSET) ; 
