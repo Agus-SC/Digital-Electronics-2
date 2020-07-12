@@ -24,7 +24,7 @@ typedef unsigned int uint32_t ;
 #define CLOCK_BASE      12000000
 
 /*Velocidad I2C*/
-#define SPEED       1000000
+#define SPEED       100000
 
 /****************************** Inicializacion I2C ******************************/
 
