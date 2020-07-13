@@ -223,6 +223,12 @@ uint32_t READ_nbyte(I2C_T *pI2C, MSG_T MSG){
             ACK will be returned. */
             // Pointer moves to the next int position (as if it was an array). But returns the old content
             *MSG.RxMSG_DATA++ = ( pI2C -> DAT ) & MASK_DAT ;
+            if (MSG.RxMSG_SIZE == 1){
+                MSG.RxMSG_SIZE-- ;
+                pI2C -> CONCLR = CONCLR_AA  ; // set STO and AA
+                SI_clear(pI2C) ; // clear SI
+                break ;
+            }
             MSG.RxMSG_SIZE-- ;
             pI2C -> CONSET = CONSET_AA ; // set the AA bit
             SI_clear(pI2C) ; // clear the SI flag
@@ -231,14 +237,11 @@ uint32_t READ_nbyte(I2C_T *pI2C, MSG_T MSG){
             case 0x58:
             /* Data has been received, NOT ACK has been returned. Data will be read from DAT.
             A STOP condition will be transmitted. */
-            *Xstruct -> Rx_BUFFER = ( pI2C -> DAT ) & MASK_DAT ;
-            pI2C -> CONSET = 0x14 ; // set the STO and AA bits
-            pI2C -> CONCLR = 0x08 ; // clear SI flag
-            
-        
+            *MSG.RxMSG_DATA = ( pI2C -> DAT ) & MASK_DAT ;
+            pI2C -> CONSET = CONSET_STO | CONSET_AA ; // set the AA bit
+            SI_clear(pI2C) ; // clear the SI flag
+            break ;    
         }
     }
-    pI2C -> CONSET = 0x14 ; // set STO and AA
-    pI2C -> CONCLR = 0x08 ; // clear SI
     return I2C_STATUS_DONE ;
 }
