@@ -64,15 +64,15 @@ el bit RUN.
 void I2C_CLK_init(I2C_T *pI2C, uint8_t interface){
     uint32_t SCLL_SCLH = CLOCK_BASE / SPEED ;
 
-    if (interface == 0){
-        /*Habilitamos Clock de la interfaz 0 */
-        *I2C0_CLK |= (0x1 << 0) ;
+    // if (interface == 0){
+    //     /*Habilitamos Clock de la interfaz 0 */
+    //     *I2C0_CLK |= (0x1 << 0) ;
 
-    }
-    else{
-        /*Habilitamos Clock de la interfaz 1 */
-        *I2C1_CLK |= (0x1 << 0) ;
-    }
+    // }
+    // else{
+    //     /*Habilitamos Clock de la interfaz 1 */
+    //     *I2C1_CLK |= (0x1 << 0) ;
+    // }
     pI2C -> SCLH = SCLL_SCLH / 2 ;
 	pI2C -> SCLL = SCLL_SCLH / 2 ;
 }

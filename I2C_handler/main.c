@@ -1,100 +1,100 @@
-/**
- * @brief	Main program body
- * @return	int
+/*
+Master configuration
  */
+#include <I2C1.h>
+#include <LED.h>
+#include <TEC.h>
+#include <INT.h>
+
+typedef enum{
+	I2C0_ID,
+	I2C1_ID,
+} interface ;
+
+typedef enum{
+	TEC_NULL,
+	TEC1,
+	TEC2,
+	TEC3,
+	TEC4,
+} TECS ;
+
+typedef enum{
+	LEDB,
+	LEDG,
+	LEDR,
+	LED1,
+	LED2,
+	LED3,
+} LEDS ;
+
+static MSG_T	TX_MSG ;
+static MSG_T	RX_MSG ;
+
+bool init_I2C = false ;
+
+/* Mascaras para saber que led esta prendido en el slave */
+#define MASK_LEDB	(0x1 << 2)
+#define MASK_LEDG	(0x1 << 1)
+#define MASK_LEDR	(0x1 << 0)
+#define MASK_LED1	(0x1 << 14)
+#define MASK_LED2	(0x1 << 11)
+#define MASK_LED3	(0x1 << 12)
+
+/* Dato que vamos a transmitir y su tamaño */
+/* Definimos el address como 0x06 */
+#define SLAVE_ADD	0x06
+/* Transmitimos un byte 0x01 para encender el led del slave */
+#define DATA_8bit	0x01
+#define SIZE	1 
+
+void setup_msg(){
+	TX_MSG.SLAVE_ADDRESS = SLAVE_ADD ;
+	TX_MSG.DATA = DATA_8bit ;
+	TX_MSG.RESTART = DATA_8bit ;
+	TX_MSG.Tx = true ;
+}
+
+/* Con la tecla 1 inicializo la interfaz I2C. Se enciende el led en blanco */
+void GPIO0_IRQHandler(){
+	if(!init_I2C){
+	I2C_CLK_init(I2C0, I2C0_ID) ;
+	I2C_init(I2C0_ID) ;
+	LEDs_set(LEDB) ;
+	LEDs_set(LEDG) ;
+	LEDs_set(LEDR) ;
+	}
+}
+
+/* Con la tecla 2 transmitimos datos master -> slave, encendemos el LED2 */
+void GPIO1_IRQHandler(){
+
+}
+
+/* Con la tecla 3 recibimos datos slava -> master, recibimos el estado
+del LED3 el cual lo seteamos con la TEC3 pertenecientes a la placa slave */
+void GPIO2_IRQHandler(){
+	
+}
+
+/* Con la tecla 4  */
+void GPIO3_IRQHandler(){
+	
+}
+
+
+
 int main(void)
 {
-	int tmp;
-	int xflag = 0;
-	static I2C_XFER_T xfer;
+	LEDs_init() ;
+	TECs_init() ;
 
-	SystemCoreClockUpdate();
-	Board_Init();
-	i2c_app_init(I2C0, SPEED_100KHZ);
-	i2c_app_init(I2C1, SPEED_100KHZ);
+	init_TEC_interrupt(TEC1) ;
+	init_TEC_interrupt(TEC2) ;
+	init_TEC_interrupt(TEC3) ;
+	init_TEC_interrupt(TEC4) ;
 
-	/* Simulate an EEPROM slave in I2C0 */
-	i2c_eeprom_init(I2C_EEPROM_BUS);
+	while(1){
 
-	/* Simuldate an IO Expansion slave in I2C0 */
-	i2c_iox_init(I2C_IOX_BUS);
-
-	while (!xflag) {
-		switch (i2c_menu()) {
-		case 0: /* Finaliza la transferencia*/
-			xflag = 1;
-			DEBUGOUT("End of I2C Demo! Bye!\r\n");
-			break;
-
-		case 1: /*Se fija que interfaz se va utilizar, */
-			tmp = con_get_input("Select I2C device [0 or 1] : ");
-			/*Le pide al usuario que seleccione que interfaz usar*/
-			DEBUGOUT("\r\n");
-			/* si es la cero se fija que este disponible y si lo esta setea el modo de operacion
-			en polling y se lo asigna a la variable i2cDev*/
-			if ((I2C_ID_T) tmp == I2C0) {
-				if (i2cDev == I2C0) {
-					break;
-				}
-				i2c_set_mode(I2C0, 0);
-				i2cDev = I2C0;
-			}
-			/*Idem para la interfaz 1*/
-			else if ((I2C_ID_T) tmp == I2C1) {
-				if (i2cDev == I2C1) {
-					break;
-				}
-				i2c_set_mode(I2C1, 0);
-				i2cDev = I2C1;
-			}
-			else {
-				DEBUGOUT("Invalid I2C Device [Must be 0 or 1]\r\n");
-			}
-			break;
-
-		case 2:
-			i2c_set_mode(i2cDev, !(mode_poll & (1 << i2cDev)));
-			break;
-
-		case 3:
-			i2c_probe_slaves(i2cDev);
-			break;
-
-		case 4:
-			i2c_rw_input(&xfer, 1);
-			tmp = Chip_I2C_MasterRead(i2cDev, xfer.slaveAddr, xfer.rxBuff, xfer.rxSz);
-			DEBUGOUT("Read %d bytes of data from slave 0x%02X.\r\n", tmp, xfer.slaveAddr);
-			con_print_data(buffer[1], tmp);
-			break;
-
-		case 5:
-			i2c_rw_input(&xfer, 2);
-			if (xfer.txSz == 0) {
-				break;
-			}
-			tmp = Chip_I2C_MasterSend(i2cDev, xfer.slaveAddr, xfer.txBuff, xfer.txSz);
-			DEBUGOUT("Written %d bytes of data to slave 0x%02X.\r\n", tmp, xfer.slaveAddr);
-			break;
-
-		case 6:
-			i2c_rw_input(&xfer, 3);
-			tmp = xfer.rxSz;
-			if (!tmp && !xfer.txSz) {
-				break;
-			}
-			Chip_I2C_MasterTransfer(i2cDev, &xfer);
-			DEBUGOUT("Master transfer : %s\r\n",
-					 xfer.status == I2C_STATUS_DONE ? "SUCCESS" : "FAILURE");
-			DEBUGOUT("Received %d bytes from slave 0x%02X\r\n", tmp - xfer.rxSz, xfer.slaveAddr);
-			con_print_data(buffer[1], tmp - xfer.rxSz);
-			break;
-
-		default:
-			DEBUGOUT("Input Invalid! Try Again.\r\n");
-		}
 	}
-	Chip_I2C_DeInit(I2C0);
-	Chip_I2C_DeInit(I2C1);
-
-	return 0;
 }
