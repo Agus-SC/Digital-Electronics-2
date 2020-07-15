@@ -85,7 +85,7 @@ void I2C_init(uint8_t interface){
         Habilitamos input receiver SDA
         Habilitamos input glitch filter del pin SDA (trabajamos con STANDARD MODE) */
         //          SDA_EZI  |   SCL_EZI 
-        *I2C0 |= (0x1 << 11) | (0x1 << 3) ;  
+        *I2C0 |= (0x01 << 11) | (0x01 << 3) ;  
     }
     else{
         /*configuracion interfaz 1

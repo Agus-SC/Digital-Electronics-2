@@ -43,17 +43,11 @@ bool init_I2C = false ;
 
 /* Dato que vamos a transmitir y su tamaño */
 /* Definimos el address como 0x06 */
-#define SLAVE_ADD	0x06
-/* Transmitimos un byte 0x01 para encender el led del slave */
-#define DATA_8bit	0x01
-#define SIZE	1 
-
-void setup_msg(){
-	TX_MSG.SLAVE_ADDRESS = SLAVE_ADD ;
-	TX_MSG.DATA = DATA_8bit ;
-	TX_MSG.RESTART = DATA_8bit ;
-	TX_MSG.Tx = true ;
-}
+#define SLA	0x06
+/*  Definimos el tamaño de transmicion */
+#define BYTE	1 
+/* Definimos el buffer para recibir datos */
+uint8_t BUFF ;
 
 /* Con la tecla 1 inicializo la interfaz I2C. Se enciende el led en blanco */
 void GPIO0_IRQHandler(){
@@ -66,25 +60,93 @@ void GPIO0_IRQHandler(){
 	}
 }
 
-/* Con la tecla 2 transmitimos datos master -> slave, encendemos el LED2 */
+/* Con la tecla 2 habilitamos modo master transmitter y transmitimos el estado del LED 3 */
 void GPIO1_IRQHandler(){
+	LEDs_clr(LEDB) ;
+	LEDs_clr(LEDG) ;
+	LEDs_clr(LEDR) ; 
 
+	/* Seteamos el bit de modo transmision */
+	TX_MSG.Tx = true ;
+	/* Seteamos el slave address */
+	TX_MSG.SLAVE_ADDRESS = SLA ;
+	/* Seteamos el tamaño a un byte */
+	TX_MSG.SIZE = BYTE ;
+	/* Seteamos el dato a transmitir, el cual es el estado del LED 3*/
+	TX_MSG.DATA = *SET1 & MASK_LED3 ;
+	/* Guardamos la direccion inicial de DATA */
+	TX_MSG.RESTART = TX_MSG.DATA ;
+
+	switch(Polling_master(I2C0, TX_MSG)){
+		case I2C_STATUS_DONE:
+		/* La transmision fue exitosa */
+		LEDs_set(LEDG) ;
+		return ;
+		case  I2C_STATUS_SLAVENAK:
+		/* NAK recibido despues de enviar SLA+W*/
+		LEDs_set(LED2) ;
+		return ;
+		case I2C_STATUS_NAK:
+		/* NAK recibido despues de transmitir DATOS */
+		LEDs_set(LED2) ;
+		return ;
+		case I2C_STATUS_ARBLOST:
+		/*Arbitraje perdido */
+		return ;
+		case I2C_STATUS_BUSERR :
+		/* Error en el bus */
+		LEDs_set(LED2) ;
+		return ;
+	}
 }
 
-/* Con la tecla 3 recibimos datos slava -> master, recibimos el estado
-del LED3 el cual lo seteamos con la TEC3 pertenecientes a la placa slave */
+/* Con la tecla 3 habilitamos el modo master receiver y recibimos el estado
+del LED3 de la placa slave. En funcion de su valor encendemos o no el Led Blue */
 void GPIO2_IRQHandler(){
+	LEDs_clr(LEDB) ;
+	LEDs_clr(LEDG) ;
+	LEDs_clr(LEDR) ; 
+	/* Seteamos el bit de modo transmision */
+	TX_MSG.Tx = false ;
+	/* Seteamos el slave address */
+	TX_MSG.SLAVE_ADDRESS = SLA ;
+	/* Seteamos el tamaño a un byte */
+	TX_MSG.SIZE = BYTE ;
 	
+	switch(Polling_master(I2C0, TX_MSG)){
+		case I2C_STATUS_DONE:
+		/* La transmision fue exitosa */
+		if (TX_MSG.DATA){
+			LEDs_set(LEDB) ;
+		}
+		else{
+			LEDs_clr(LEDB) ;
+		}
+		return ;
+		case  I2C_STATUS_SLAVENAK:
+		/* NAK recibido despues de enviar SLA+W*/
+		LEDs_set(LED2) ;
+		return ;
+		case I2C_STATUS_BUSERR :
+		/*Error en el BUS */
+		LEDs_set(LED2) ;
+		return ;
+	}
 }
 
-/* Con la tecla 4  */
+/* Con la tecla 4: Toggleo estado del led 3 */
+bool aux_led = false ;
 void GPIO3_IRQHandler(){
-	
+	if (aux_led){
+		LEDs_set(LED3) ;
+	}
+	else{
+		LEDs_clr(LED3) ;
+	}
+	aux_led = !aux_led ;
 }
 
-
-
-int main(void)
+void main(void)
 {
 	LEDs_init() ;
 	TECs_init() ;

@@ -131,8 +131,7 @@ void init_SLAVE(I2C_T *pI2C, uint8_t SLAVE_ADDRESS){
 }
 
 /* Funcion que transmite n byte en master mode */
-uint32_t Tx_master(I2C_T *pI2C, MSG_T MSG){
-    
+uint32_t Tx_master(I2C_T *pI2C, MSG_T MSG){  
     while(!(pI2C -> CONSET & CONSET_SI)){}
     switch(get_STATUS(pI2C)){
         case 0x00:
@@ -439,36 +438,3 @@ uint32_t Polling_slave(I2C_T *pI2C, MSG_T MSG){
     return I2C_STATUS_DONE ;
 }
 
-/*
-Master
-define el address
-define el tamaño de los datos a recibir
-inicializa I2C comunication as master 
-**** master -> slave ****
-transmite el slave address
-escribe un dato
-termina la transmision 
-**** slave -> master ****
-usa una funcion requestFrom(add, tamaño de los datos a recibir)
-lee los datos que le envia el slave y los guarda en una variable
-
-Slave
-define el address
-define el tamaño de los datos a transmitir
-define el dato a transmitir 
-inicializa I2C comunication as slave
-usa una funcion onReceive(requestEvent) son eventos/funciones
-que se disparan cuando el master solicita datos. En este caso define
-los datos a transmitir y los escribe.
-usa una funcion onReceive(receiveEvent) son eventos/funciones
-que se disparan cuando el master transmite datos. En estaa funcion
-lee los datos y los almacena en una variable
-
-
-
-
-
-
-
-
-*/
