@@ -6,6 +6,7 @@ Master configuration
 #include <TEC.h>
 #include <INT.h>
 
+
 typedef enum{
 	I2C0_ID,
 	I2C1_ID,
@@ -49,11 +50,17 @@ bool init_I2C = false ;
 /* Definimos el buffer para recibir datos */
 uint8_t BUFF ;
 
+uint8_t led_state = 0 ;
+
 /* Con la tecla 1 inicializo la interfaz I2C. Se enciende el led en blanco */
 void GPIO0_IRQHandler(){
 	if(!init_I2C){
 	I2C_CLK_init(I2C0, I2C0_ID) ;
 	I2C_init(I2C0_ID) ;
+	init_I2C_interrupt(I2C0_ID) ;
+	I2C_CLK_init(I2C1, I2C1_ID) ;
+	I2C_init(I2C1_ID) ;
+	init_I2C_interrupt(I2C1_ID) ;
 	LEDs_set(LEDB) ;
 	LEDs_set(LEDG) ;
 	LEDs_set(LEDR) ;
@@ -65,17 +72,27 @@ void GPIO1_IRQHandler(){
 	LEDs_clr(LEDB) ;
 	LEDs_clr(LEDG) ;
 	LEDs_clr(LEDR) ; 
-
+	
 	/* Seteamos el bit de modo transmision */
 	TX_MSG.Tx = true ;
+	RX_MSG.Tx = false ;
 	/* Seteamos el slave address */
 	TX_MSG.SLAVE_ADDRESS = SLA ;
+	RX_MSG.SLAVE_ADDRESS = SLA ;
 	/* Seteamos el tamaño a un byte */
 	TX_MSG.SIZE = BYTE ;
+	RX_MSG.SIZE = BYTE ;
 	/* Seteamos el dato a transmitir, el cual es el estado del LED 3*/
-	TX_MSG.DATA = *SET1 & MASK_LED3 ;
+	led_state = (*SET1 & MASK_LED3) >> 12 ;
+	TX_MSG.DATA = led_state ;
 	/* Guardamos la direccion inicial de DATA */
 	TX_MSG.RESTART = TX_MSG.DATA ;
+
+	set_SLAVEADDR(I2C1, SLA) ;
+	init_SLAVE(I2C1, SLA) ;
+
+    ENA_interface(I2C0) ;
+    START_send(I2C0) ;
 
 	switch(Polling_master(I2C0, TX_MSG)){
 		case I2C_STATUS_DONE:
@@ -137,6 +154,9 @@ void GPIO2_IRQHandler(){
 /* Con la tecla 4: Toggleo estado del led 3 */
 bool aux_led = false ;
 void GPIO3_IRQHandler(){
+	LEDs_clr(LEDB) ;
+	LEDs_clr(LEDG) ;
+	LEDs_clr(LEDR) ; 
 	if (aux_led){
 		LEDs_set(LED3) ;
 	}
@@ -144,6 +164,16 @@ void GPIO3_IRQHandler(){
 		LEDs_clr(LED3) ;
 	}
 	aux_led = !aux_led ;
+}
+
+void I2C0_IRQHandler(void)
+{
+	
+}
+
+void I2C1_IRQHandler(void)
+{
+	
 }
 
 void main(void)
