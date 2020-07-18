@@ -44,18 +44,49 @@ typedef enum{
 
 bool init_I2C = false ;
 
+void Led_Tec_init(){
+	LEDs_init() ;
+	TECs_init() ;
+
+	init_TEC_interrupt(TEC1) ;
+	init_TEC_interrupt(TEC2) ;
+	init_TEC_interrupt(TEC3) ;
+	init_TEC_interrupt(TEC4) ;
+}
+
+void I2C_init(){
+	I2C_PIN_init(I2C0_ID) ;
+	I2C_CLK_init(I2C0) ;
+	init_I2C_interrupt(I2C0_ID) ;
+	I2C_PIN_init(I2C1_ID) ;
+	I2C_CLK_init(I2C1) ;
+	init_I2C_interrupt(I2C1_ID) ;
+	LEDs_set(LEDB) ;
+	LEDs_set(LEDG) ;
+	LEDs_set(LEDR) ;
+}
+
+void MSG_init(){
+	/* Seteamos el slave address */
+	M_xFER.SLA = SLAVE_ADD ;
+    S_xFER.SLA = SLAVE_ADD ;
+	/* Seteamos el tamaño a un byte */
+	M_xFER.SIZE_Tx = BYTE ;
+    S_xFER.SIZE_Rx = BYTE ;
+	/* Seteamos buffers y datos para transmitir y recibir en los diferentes modos
+	de operacion */
+	M_xFER.DATA_Tx = &led_state ;
+    S_xFER.DATA_Rx = &SRx_BUFF ;
+	S_xFER.DATA_Tx = &led_state ;
+    M_xFER.DATA_Rx = &MRx_BUFF ;
+}
+
 void GPIO0_IRQHandler(){
     clear_IST(TEC1) ;
 	if(!init_I2C){
-        I2C_PIN_init(I2C0_ID) ;
-        I2C_CLK_init(I2C0) ;
-        init_I2C_interrupt(I2C0_ID) ;
-        I2C_PIN_init(I2C1_ID) ;
-        I2C_CLK_init(I2C1) ;
-        init_I2C_interrupt(I2C1_ID) ;
-        LEDs_set(LEDB) ;
-        LEDs_set(LEDG) ;
-        LEDs_set(LEDR) ;
+        I2C_init() ;
+		MSG_init() ;
+		init_SLAVE(I2C0, &S_xFER) ;
         init_I2C = !init_I2C ;
 	}
 }
@@ -66,23 +97,9 @@ void GPIO1_IRQHandler(){
 	LEDs_clr(LEDB) ;
 	LEDs_clr(LEDG) ;
 	LEDs_clr(LEDR) ;
-
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = WRITE ;
     S_xFER.DIR = READ ;
-	/* Seteamos el slave address */
-	M_xFER.SLA = SLAVE_ADD ;
-    S_xFER.SLA = SLAVE_ADD ;
-	/* Seteamos el tamaño a un byte */
-	M_xFER.SIZE_Tx = BYTE ;
-    S_xFER.SIZE_Rx = BYTE ;
-	/* Seteamos el dato a transmitir, el cual es el estado del LED 3*/
-	led_state = (*SET1 & MASK_LED3) >> 12 ;
-	M_xFER.DATA_Tx = &led_state ;
-    S_xFER.DATA_Rx = &SRx_BUFF ;
-
-	/* Espero a que el bus este disponible */
-	init_SLAVE(I2C0, &S_xFER) ;
     set_I2EN(I2C1) ;
     send_START(I2C1) ;
 
@@ -99,22 +116,8 @@ void GPIO2_IRQHandler(){
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = READ ;
     S_xFER.DIR = WRITE ;
-	/* Seteamos el slave address */
-	M_xFER.SLA = SLAVE_ADD ;
-    S_xFER.SLA = SLAVE_ADD ;
-	/* Seteamos el tamaño a un byte */
-	M_xFER.SIZE_Rx = BYTE ;
-    S_xFER.SIZE_Tx = BYTE ;
-	/* Seteamos el dato a transmitir, el cual es el estado del LED 3*/
-	led_state = (*SET1 & MASK_LED3) >> 12 ;
-	S_xFER.DATA_Tx = &led_state ;
-    M_xFER.DATA_Rx = &MRx_BUFF ;
-
-	/* Espero a que el bus este disponible */
-    // while(is_bus_busy(I2C0)){}
-	init_SLAVE(I2C1, &S_xFER) ;
-    set_I2EN(I2C0) ;
-    send_START(I2C0) ;
+    set_I2EN(I2C1) ;
+    send_START(I2C1) ;
 
 }
 
@@ -126,9 +129,11 @@ void GPIO3_IRQHandler(){
 	LEDs_clr(LEDR) ;
 	if (!aux_led){
 		LEDs_set(LED3) ;
+		led_state = 1 ;
 	}
 	else{
 		LEDs_clr(LED3) ;
+		led_state = 0 ;
 	}
 	aux_led = !aux_led ;
 }
@@ -143,29 +148,35 @@ void I2C1_IRQHandler(void)
         switch(M_status){
             case I2C_STATUS_DONE:
             /* transmision exitosa */
+			RST_MSGTx(&M_xFER) ;
             break ;
             case I2C_STATUS_OK:
             /* transmision en proceso */
             break ;
             case I2C_STATUS_SLAVENAK:
+			/* Error en la transmision */
+			RST_MSGTx(&M_xFER) ;
 			LEDs_set(LEDB) ;
 			LEDs_clr(LEDG) ;
 			LEDs_clr(LEDR) ;
             break ;
             case I2C_STATUS_NAK:
 			/* Error en la transmision */
+			RST_MSGTx(&M_xFER) ;
 			LEDs_set(LEDG) ;
 			LEDs_clr(LEDR) ;
 			LEDs_clr(LEDB) ;
 			break ;
             case I2C_STATUS_BUSERR:
             /* Error en la transmision */
+			RST_MSGTx(&M_xFER) ;
             LEDs_set(LEDR) ;
             LEDs_clr(LEDG) ;
             LEDs_clr(LEDB) ;
             break ;
             case I2C_STATUS_ARBLOST:
             /* Arbitration has been lost */
+			RST_MSGTx(&M_xFER) ;
             LEDs_set(LEDB) ;
             LEDs_set(LEDR) ;
             LEDs_set(LEDG) ;
@@ -177,19 +188,36 @@ void I2C1_IRQHandler(void)
         switch(M_status){
             case I2C_STATUS_DONE:
             /* transmision exitosa */
+			RST_MSGRx(&M_xFER) ;
             break ;
             case I2C_STATUS_OK:
             /* transmision en proceso */
             break ;
             case I2C_STATUS_SLAVENAK:
+			RST_MSGRx(&M_xFER) ;
+			LEDs_set(LEDB) ;
+			LEDs_clr(LEDG) ;
+			LEDs_clr(LEDR) ;
+            break ;
             case I2C_STATUS_NAK:
+			RST_MSGRx(&M_xFER) ;
+			LEDs_set(LEDG) ;
+			LEDs_clr(LEDR) ;
+			LEDs_clr(LEDB) ;
+			break ;
             case I2C_STATUS_BUSERR:
-            /* Error en la transmision */
+             /* Error en la transmision */
+			RST_MSGRx(&M_xFER) ;
             LEDs_set(LEDR) ;
+            LEDs_clr(LEDG) ;
+            LEDs_clr(LEDB) ;
             break ;
             case I2C_STATUS_ARBLOST:
             /* Arbitration has been lost */
+			RST_MSGRx(&M_xFER) ;
             LEDs_set(LEDB) ;
+            LEDs_set(LEDR) ;
+            LEDs_set(LEDG) ;
             break ;
         }
     }
@@ -199,21 +227,22 @@ void I2C0_IRQHandler(void)
 {
 	if(S_xFER.DIR == READ ){
         S_status = Rx_SLAVE(I2C0, &S_xFER) ;
+		if (S_status == I2C_STATUS_DONE){
+			RST_MSGRx(&S_xFER) ; 
+			}
     }
     else{
         S_status = Tx_SLAVE(I2C0, &S_xFER) ;
+		if (S_status == I2C_STATUS_DONE){
+			RST_MSGTx(&S_xFER) ; 
+			}
     }
 }
 
 void main(void)
 {
-	LEDs_init() ;
-	TECs_init() ;
-
-	init_TEC_interrupt(TEC1) ;
-	init_TEC_interrupt(TEC2) ;
-	init_TEC_interrupt(TEC3) ;
-	init_TEC_interrupt(TEC4) ;
+	/* Iinicializacion de los Leds y teclas */
+	Led_Tec_init() ;
 
 	while(1){
 		if (SRx_BUFF){

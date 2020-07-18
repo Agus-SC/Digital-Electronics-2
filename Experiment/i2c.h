@@ -83,8 +83,8 @@ del registro CONCLR */
 #define MASK_DAT            0xFF // 11111111
 
 /* Definicion de los macros para leer o escribir */
-#define READ                1 << 0
-#define WRITE               0 << 0
+#define READ                1 
+#define WRITE               0 
 
 /* Clock Source: 12MHz */
 #define CLOCK_BASE      12000000
@@ -93,26 +93,28 @@ del registro CONCLR */
 #define SPEED       100000
 
 /* Definicion de una estructura para la transmicion y recepcion de datos */
-
 typedef struct {
-    uint8_t SLA ;         /* Slave address 1 byte */
-    uint8_t *DATA_Tx ;    /* Datos de transmicion 1 Byte a la vez */
-    uint32_t SIZE_Tx ;    /* Tama;o de los datos a transmitir */
-    uint8_t *DATA_Rx ;    /* Datos de recepion 1 Byte a la vez */
-    uint32_t SIZE_Rx ;    /* Tama;o de los datos a recibi */
-    uint8_t DIR ;         /* Bit de direccion 0 para escribir 1 para leer */
-
+    uint8_t SLA ;           /* Slave address 1 byte */
+    uint8_t *DATA_Tx ;      /* Datos de transmicion 1 Byte a la vez */
+    uint8_t *RST_DATA_Tx ;  /* Posicion inicial de los datos */
+    uint32_t SIZE_Tx ;      /* Tama;o de los datos a transmitir */
+    uint32_t RST_SIZE_Tx ;  /* Tama;o inicial de los datos a transmitir */
+    uint8_t *DATA_Rx ;      /* Datos de recepion 1 Byte a la vez */
+    uint8_t *RST_DATA_Rx ;  /* Posicion inicial de los datos */
+    uint32_t SIZE_Rx ;      /* Tama;o de los datos a recibir */
+    uint32_t RST_SIZE_Rx ;  /* Tama;o inicial de los datos a recibir */
+    uint8_t DIR ;           /* Bit de direccion 0 para escribir 1 para leer */
+    
 } TRxFER ;
 
 /* Definicion de estados de control */
 typedef enum {
-	I2C_STATUS_BUSERR,	  /* Bus error in I2C transfer */
-    I2C_STATUS_SLAVENAK,   /* NAK received after SLA+W or SLA+R */
-    I2C_STATUS_NAK,		  /* NAK received during transfer */
+	I2C_STATUS_BUSERR,	  /* Error en el bus */
+    I2C_STATUS_SLAVENAK,  /* NAK recibido despues de SLA+W o SLA+R */
+    I2C_STATUS_NAK,		  /* NAK recibido durante la transferencia */
     I2C_STATUS_ARBLOST,	  /* Aribitration lost during transfer */
-    I2C_STATUS_DONE ,	          /* Transfer done successfully */
-	I2C_STATUS_BUSY,	          /* I2C is busy doing transfer */
-	I2C_STATUS_OK,
+    I2C_STATUS_DONE ,	  /* Transferencia de excitosa */
+	I2C_STATUS_OK,        /* Transferencia en transito */ 
 
 } I2C_STATUS_T;
 
@@ -189,6 +191,16 @@ bool is_bus_busy(I2C_T *pI2C){
    }
 }
 
+void RST_MSGTx(TRxFER *MSG){
+    MSG -> DATA_Tx = MSG -> RST_DATA_Tx ;
+    MSG -> SIZE_Tx = MSG -> RST_SIZE_Tx ;
+}
+
+void RST_MSGRx(TRxFER *MSG){
+    MSG -> DATA_Rx = MSG -> RST_DATA_Rx ;
+    MSG -> SIZE_Rx = MSG -> RST_SIZE_Rx ;
+}
+
 /*************** Funciones para modo master ***************/
 
 /* Funcion para transmitir */
@@ -228,7 +240,7 @@ uint32_t Tx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         case 0x28:
         /* Data has been transmitted, ACK has been received. If the transmitted data was the last
         data byte then transmit a STOP condition, otherwise transmit the next data byte. */
-        if(!(MSG -> SIZE_Tx)){
+        if(!(MSG -> SIZE_Tx)){     
             pI2C -> CONSET = CONSET_STO | CONSET_AA ; // set STO and AA bits
             clear_SI(pI2C) ; // clear SI flag
             return I2C_STATUS_DONE ;
@@ -249,6 +261,8 @@ uint32_t Tx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         case 0x30:
         /* Data has been transmitted, NOT ACK received. A STOP condition will
         be transmitted. */
+        MSG -> DATA_Tx = MSG -> RST_DATA_Tx ;
+        MSG -> SIZE_Tx = MSG -> RST_SIZE_Tx ;
         pI2C -> CONSET = CONSET_STO | CONSET_AA ; // set STO and AA bits
         clear_SI(pI2C) ; // clear SI flag
         return I2C_STATUS_NAK ;
@@ -311,12 +325,13 @@ uint32_t Rx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         data will be received. If this is the last data byte then NOT ACK will be returned, otherwise
         ACK will be returned. */
         // Pointer moves to the next int position (as if it was an array). But returns the old content
-        *MSG -> DATA_Rx++ = ( pI2C -> DAT ) & MASK_DAT ;
+        *MSG -> DATA_Rx = ( pI2C -> DAT ) & MASK_DAT ;
         if (MSG -> SIZE_Rx == 1){
             pI2C -> CONCLR = CONCLR_AA  ; // clear AA
             clear_SI(pI2C) ; // clear SI
             break ;
         }
+        MSG -> DATA_Rx++ ;
         MSG -> SIZE_Rx-- ;
         pI2C -> CONSET = CONSET_AA ; // set the AA bit
         clear_SI(pI2C) ; // clear the SI flag
@@ -329,7 +344,7 @@ uint32_t Rx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         MSG -> SIZE_Rx-- ;
         pI2C -> CONSET = CONSET_STO | CONSET_AA ; // set the AA bit
         clear_SI(pI2C) ; // clear the SI flag
-        break ;
+        return I2C_STATUS_NAK ;
     }
     return I2C_STATUS_OK ;
 }
@@ -394,7 +409,7 @@ uint32_t Rx_SLAVE(I2C_T *pI2C, TRxFER *MSG){
                 MSG -> SIZE_Rx-- ;
                 pI2C -> CONCLR = CONCLR_AA  ; // clear AA
                 clear_SI(pI2C) ; // clear SI flag
-                break ;
+                return I2C_STATUS_DONE ;
             }
             MSG -> SIZE_Rx-- ;
             pI2C -> CONSET = CONSET_AA ; // set AA bits
