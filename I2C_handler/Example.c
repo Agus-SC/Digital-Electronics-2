@@ -186,6 +186,13 @@ int handleMasterXferState(LPC_I2C_T *pI2C, I2C_XFER_T  *xfer)
 	case 0x28:		/* DATA sent and ACK received */
 		if (!xfer->txSz) {
 			cclr &= ~(xfer->rxSz ? I2C_CON_STA : I2C_CON_STO);
+			/* si xfer -> rxSz es true entonces entonces hace lo que 
+			esta antes de los dos puntos, si es false lo que esta despues.
+			si rxSz es >0 setea un cero en STA entonces setea en STA en CONSET
+			y cuando rxSz == 0 le pone un 0 en STO.
+			
+			
+			*/
 		}
 		else {
 			pI2C->DAT = *xfer->txBuff++;
@@ -231,7 +238,7 @@ int handleMasterXferState(LPC_I2C_T *pI2C, I2C_XFER_T  *xfer)
 
 	/* Set clear control flags */
 	pI2C->CONSET = cclr ^ I2C_CON_FLAGS;
-	pI2C->CONCLR = cclr & ~I2C_CON_STO;
+	pI2C->CONCLR = cclr & ~I2C_CON_STO; 
 
 	/* If stopped return 0 */
     /*Primero se fija que haya una condicion de stop, si se da entonces

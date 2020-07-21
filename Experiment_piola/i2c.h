@@ -127,12 +127,13 @@ ambos casos
 void I2C_PIN_init(uint8_t ITF){
     if (!ITF){
         /* configuracion interfaz 0,
+        Configuramos 3ns glitch filter
         Habilitamos input receiver SCL
         Habilitamos input glitch filter del pin SCL (trabajamos con STANDARD MODE)
         Habilitamos input receiver SDA
         Habilitamos input glitch filter del pin SDA (trabajamos con STANDARD MODE) */
         //          SDA_EZI  |   SCL_EZI
-        *SFSI2C0 |= (0x01 << 11) | (0x01 << 3) ;
+        *SFSI2C0 = (0x1 << 11) | (0x1 << 8) | (0x1 << 3) | (0x1 << 0) ;
     }
     else{
         /*configuracion interfaz 1
@@ -141,8 +142,8 @@ void I2C_PIN_init(uint8_t ITF){
         Habilitamos el input buffer
         Habilitamos el input filter glitch
         */
-        *SFSP2_3 |= (0x1 << 6) | (0x1 << 0) ;
-        *SFSP2_4 |= (0x1 << 6) | (0x1 << 0) ;
+        *SFSP2_3 = (0x1 << 7) | (0x1 << 6) | (0x1 << 0) ;
+        *SFSP2_4 = (0x1 << 7) | (0x1 << 6) | (0x1 << 0) ;
     }
 }
 
@@ -173,6 +174,7 @@ void send_STOP(I2C_T *pI2C){
 
 /* Funcion que limpia el bit SI del registro CONSET */
 void clear_SI(I2C_T *pI2C){
+	int i ;
     pI2C -> CONCLR = CONCLR_SI ;
 }
 
@@ -216,9 +218,9 @@ uint32_t Tx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         /* A START condition has been transmitted. The Slave Address
         + R/W bit will be transmitted, an ACK bit will be received. */
         pI2C -> DAT = ( MSG -> SLA << 1 ) | WRITE ; // write Slave address with W bit to DAT
-        pI2C -> CONSET = CONSET_AA ; // set the AA bit
-        pI2C -> CONCLR = CONCLR_STA ; // Clear the AA bit
-        clear_SI(pI2C) ; // clear SI flag
+//        pI2C -> CONSET = CONSET_AA ; // set the AA bit
+        pI2C -> CONCLR = CONCLR_AA | CONCLR_STA | CONCLR_SI; // Clear the AA bit
+//        clear_SI(pI2C) ; // clear SI flag
         // Los buffers los cargamos en previamente
         break ;
 
@@ -229,6 +231,7 @@ uint32_t Tx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         pI2C -> CONSET = CONSET_AA ; // set the AA bit
         pI2C -> CONCLR = CONCLR_STA ; // Clear the AA bit
         clear_SI(pI2C) ; // clear SI flag
+
         // Los buffers los cargamos en previamente
         break ;
 
@@ -247,7 +250,7 @@ uint32_t Tx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         }
         pI2C -> DAT = ( *MSG -> DATA_Tx++) ;
         MSG -> SIZE_Tx-- ;
-        pI2C -> CONSET = CONSET_AA ; // set the AA bit
+        pI2C -> CONCLR = CONCLR_AA ;
         clear_SI(pI2C) ; // clear SI flag
         break ;
 
@@ -358,9 +361,9 @@ void init_SLAVE(I2C_T *pI2C, TRxFER *MSG){
     pI2C -> ADR2 = MSG -> SLA << 1 ;
     pI2C -> ADR3 = MSG -> SLA << 1 ;
     /* Seteamos la mascara */
-    pI2C -> MASK[0] = (MSG -> SLA << 1) & 0xFE ;
+    pI2C -> MASK[0] = (MSG -> SLA << 1) & 0x00 ;
     for(i = 1 ; i < 4 ; i++){
-        pI2C -> MASK[i] = 0x00 & 0xFE ;
+        pI2C -> MASK[i] = 0x00 & 0x00 ;
     }
     /* Habilitamos la interfaz y el AA para slave mode */
     pI2C -> CONCLR = CONCLR_STA | CONCLR_SI ;

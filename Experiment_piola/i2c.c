@@ -1,12 +1,11 @@
+// #include <i2c_funciona.h>
+// #include <test_leds.h>
+// #include <test_tecs.h>
+// #include <test_int.h>
 #include <i2c.h>
 #include <LED.h>
 #include <TEC.h>
-#include <INT.h>
-
-#include <i2c_funciona.h>
-#include <test_leds.h>
-#include <test_tecs.h>
-#include <test_int.h>
+#include <INT.h> 
 
 TRxFER	M_xFER ;
 TRxFER	S_xFER ;
@@ -50,28 +49,11 @@ typedef enum{
 bool init_I2C = false ;
 
 void GPIO0_IRQHandler(){
-
-	if(!init_I2C){
-        I2C_PIN_init(I2C0_ID) ;
-        I2C_CLK_init(I2C0) ;
-        init_I2C_interrupt(I2C0_ID) ;
-        I2C_PIN_init(I2C1_ID) ;
-        I2C_CLK_init(I2C1) ;
-        init_I2C_interrupt(I2C1_ID) ;
-        LEDs_set(LEDB) ;
-        LEDs_set(LEDG) ;
-        LEDs_set(LEDR) ;
-        init_I2C = !init_I2C ;
-	}
 	clear_IST(TEC1) ;
 }
 
 /* Con la tecla 2 habilitamos modo master transmitter y transmitimos el estado del LED 3 */
 void GPIO1_IRQHandler(){
-
-	LEDs_clr(LEDB) ;
-	LEDs_clr(LEDG) ;
-	LEDs_clr(LEDR) ;
 
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = WRITE ;
@@ -97,10 +79,6 @@ void GPIO1_IRQHandler(){
 /* Con la tecla 3 habilitamos el modo master receiver y recibimos el estado
 del LED3. En funcion de su valor encendemos o no el Led Blue */
 void GPIO2_IRQHandler(){
-
-	LEDs_clr(LEDB) ;
-	LEDs_clr(LEDG) ;
-	LEDs_clr(LEDR) ;
 
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = READ ;
@@ -128,9 +106,6 @@ void GPIO2_IRQHandler(){
 bool aux_led = false ;
 void GPIO3_IRQHandler(){
 
-	LEDs_clr(LEDB) ;
-	LEDs_clr(LEDG) ;
-	LEDs_clr(LEDR) ;
 	if (!aux_led){
 		LEDs_set(LED3) ;
 	}
@@ -225,6 +200,13 @@ void main(void)
 	init_TEC_interrupt(TEC3) ;
 	init_TEC_interrupt(TEC4) ;
 
+	I2C_PIN_init(I2C0_ID) ;
+	I2C_CLK_init(I2C0) ;
+	init_I2C_interrupt(I2C0_ID) ;
+	I2C_PIN_init(I2C1_ID) ;
+	I2C_CLK_init(I2C1) ;
+	init_I2C_interrupt(I2C1_ID) ;
+
 	while(1){
 		if (SRx_BUFF){
 			LEDs_set(LED1) ;
@@ -238,7 +220,3 @@ void main(void)
 		}
 	}
 }
-
-
-
-
