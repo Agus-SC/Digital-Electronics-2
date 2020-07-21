@@ -5,7 +5,12 @@
 #include <i2c.h>
 #include <LED.h>
 #include <TEC.h>
-#include <INT.h> 
+#include <INT.h>
+
+/*
+Trabajamos con 3.3V y resistencias de pull-up de 2k2.
+Funcionan tanto MasterTX como Master RX.
+*/
 
 TRxFER	M_xFER ;
 TRxFER	S_xFER ;
@@ -121,7 +126,6 @@ uint8_t S_status ;
 
 void I2C1_IRQHandler(void)
 {
-//	if(I2C0->CONSET & CONSET_SI){return;}
 	if(M_xFER.DIR == WRITE ){
         M_status = Tx_MASTER(I2C1, &M_xFER) ;
 //        switch(M_status){
@@ -158,6 +162,8 @@ void I2C1_IRQHandler(void)
     }
     else{
         M_status = Rx_MASTER(I2C1, &M_xFER) ;
+        int i = 0;
+        for (i=0;i<1000;i++);
 //        switch(M_status){
 //            case I2C_STATUS_DONE:
 //            /* transmision exitosa */
@@ -181,12 +187,13 @@ void I2C1_IRQHandler(void)
 
 void I2C0_IRQHandler(void)
 {
-//	if(I2C1->CONSET & CONSET_SI){return;}
 	if(S_xFER.DIR == READ ){
         S_status = Rx_SLAVE(I2C0, &S_xFER) ;
     }
     else{
         S_status = Tx_SLAVE(I2C0, &S_xFER) ;
+        int i = 0;
+        for (i=0;i<1000;i++);
     }
 }
 

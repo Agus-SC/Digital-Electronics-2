@@ -127,7 +127,6 @@ ambos casos
 void I2C_PIN_init(uint8_t ITF){
     if (!ITF){
         /* configuracion interfaz 0,
-        Configuramos 3ns glitch filter
         Habilitamos input receiver SCL
         Habilitamos input glitch filter del pin SCL (trabajamos con STANDARD MODE)
         Habilitamos input receiver SDA
@@ -154,6 +153,7 @@ void I2C_CLK_init(I2C_T *pI2C){
     uint32_t SCLL_SCLH = CLOCK_BASE / SPEED ;
     pI2C -> SCLH = SCLL_SCLH / 2 ;
 	pI2C -> SCLL = SCLL_SCLH / 2 ;
+	pI2C -> CONCLR = CONCLR_I2EN | CONCLR_STA | CONCLR_SI | CONCLR_AA ;
 }
 
 /* Funcion que habilita la interfaz I2C */
@@ -312,6 +312,11 @@ uint32_t Rx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         case 0x40:
         /* Previous state was State 08 or State 10. Slave Address + Read has
         been transmitted, ACK has been received. Data will be received and ACK returned. */
+		if (MSG -> SIZE_Rx == 1){
+			pI2C -> CONCLR = CONCLR_AA  ; // clear AA
+			clear_SI(pI2C) ; // clear SI
+			break ;
+		}
         pI2C -> CONSET = CONSET_AA ; // set the AA bit
         clear_SI(pI2C) ; // clear the SI flag
         break ;
