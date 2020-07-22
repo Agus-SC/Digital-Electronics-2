@@ -339,7 +339,7 @@ uint32_t Rx_MASTER(I2C_T *pI2C, TRxFER *MSG){
         MSG -> SIZE_Rx-- ;
         pI2C -> CONSET = CONSET_STO | CONSET_AA ; // set the AA bit
         clear_SI(pI2C) ; // clear the SI flag
-        return I2C_STATUS_NAK ;
+        return I2C_STATUS_DONE ;
     }
     return I2C_STATUS_OK ;
 }
@@ -353,9 +353,9 @@ void init_SLAVE(I2C_T *pI2C, TRxFER *MSG){
     pI2C -> ADR2 = MSG -> SLA << 1 ;
     pI2C -> ADR3 = MSG -> SLA << 1 ;
     /* Seteamos la mascara */
-    pI2C -> MASK[0] = (MSG -> SLA << 1) & 0x00 ;
+    pI2C -> MASK[0] = (MSG -> SLA << 1) & 0xFE ;
     for(i = 1 ; i < 4 ; i++){
-        pI2C -> MASK[i] = 0x00 & 0x00 ;
+        pI2C -> MASK[i] = 0x00 ;
     }
     /* Habilitamos la interfaz y el AA para slave mode */
     pI2C -> CONCLR = CONCLR_STA | CONCLR_SI ;

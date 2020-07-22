@@ -2,7 +2,7 @@
 #include <LED.h>
 #include <TEC.h>
 #include <INT.h>
-
+/* Estructura para Master y Slave*/
 TRxFER	M_xFER ;
 TRxFER	S_xFER ;
 
@@ -42,14 +42,30 @@ typedef enum{
 	TEC4,
 } TECS ;
 
-bool init_I2C = false ;
+void Aux_init(void){
+	LEDs_init() ;
+	TECs_init() ;
 
-void GPIO0_IRQHandler(){
-	clear_IST(TEC1) ;
+	init_TEC_interrupt(TEC1) ;
+	init_TEC_interrupt(TEC2) ;
+	init_TEC_interrupt(TEC3) ;
+	init_TEC_interrupt(TEC4) ;
+}
+
+void I2C_init(void){
+	I2C_PIN_init(I2C0_ID) ;
+	I2C_CLK_init(I2C0) ;
+	init_I2C_interrupt(I2C0_ID) ;
+	I2C_PIN_init(I2C1_ID) ;
+	I2C_CLK_init(I2C1) ;
+	init_I2C_interrupt(I2C1_ID) ;
 }
 
 /* Con la tecla 2 habilitamos modo master transmitter y transmitimos el estado del LED 3 */
 void GPIO1_IRQHandler(){
+	LEDs_clr(LEDR) ;
+	LEDs_clr(LEDG) ;
+	LEDs_clr(LEDB) ;
 
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = WRITE ;
@@ -75,6 +91,9 @@ void GPIO1_IRQHandler(){
 /* Con la tecla 3 habilitamos el modo master receiver y recibimos el estado
 del LED3. En funcion de su valor encendemos o no el Led Blue */
 void GPIO2_IRQHandler(){
+	LEDs_clr(LEDR) ;
+	LEDs_clr(LEDG) ;
+	LEDs_clr(LEDB) ;
 
 	/* Seteamos el bit de modo transmision */
 	M_xFER.DIR = READ ;
@@ -120,90 +139,67 @@ void I2C1_IRQHandler(void)
 	if(M_xFER.DIR == WRITE ){
         M_status = Tx_MASTER(I2C1, &M_xFER) ;
         delay() ;
-//        switch(M_status){
-//            case I2C_STATUS_DONE:
-//            /* transmision exitosa */
-//            break ;
-//            case I2C_STATUS_OK:
-//            /* transmision en proceso */
-//            break ;
-//            case I2C_STATUS_SLAVENAK:
-//			LEDs_set(LEDB) ;
-//			LEDs_clr(LEDG) ;
-//			LEDs_clr(LEDR) ;
-//            break ;
-//            case I2C_STATUS_NAK:
-//			/* Error en la transmision */
-//			LEDs_set(LEDG) ;
-//			LEDs_clr(LEDR) ;
-//			LEDs_clr(LEDB) ;
-//			break ;
-//            case I2C_STATUS_BUSERR:
-//            /* Error en la transmision */
-//            LEDs_set(LEDR) ;
-//            LEDs_clr(LEDG) ;
-//            LEDs_clr(LEDB) ;
-//            break ;
-//            case I2C_STATUS_ARBLOST:
-//            /* Arbitration has been lost */
-//            LEDs_set(LEDB) ;
-//            LEDs_set(LEDR) ;
-//            LEDs_set(LEDG) ;
-//            break ;
-//        }
+       switch(M_status){
+           case I2C_STATUS_DONE:
+           /* transmision exitosa */
+		   LEDs_set(LEDG) ;
+           break ;
+           case I2C_STATUS_OK:
+           /* transmision en proceso */
+           break ;
+           case I2C_STATUS_SLAVENAK:
+           case I2C_STATUS_NAK:
+           case I2C_STATUS_ARBLOST:
+           /* Error en la transmision */
+           LEDs_set(LEDB) ;
+           break ;
+           case I2C_STATUS_BUSERR:
+           /* Arbitration has been lost */
+           LEDs_set(LEDR) ;
+           break ;
+       }
     }
     else{
         M_status = Rx_MASTER(I2C1, &M_xFER) ;
         delay() ;
-//        switch(M_status){
-//            case I2C_STATUS_DONE:
-//            /* transmision exitosa */
-//            break ;
-//            case I2C_STATUS_OK:
-//            /* transmision en proceso */
-//            break ;
-//            case I2C_STATUS_SLAVENAK:
-//            case I2C_STATUS_NAK:
-//            case I2C_STATUS_BUSERR:
-//            /* Error en la transmision */
-//            LEDs_set(LEDR) ;
-//            break ;
-//            case I2C_STATUS_ARBLOST:
-//            /* Arbitration has been lost */
-//            LEDs_set(LEDB) ;
-//            break ;
-//        }
+       switch(M_status){
+           case I2C_STATUS_DONE:
+           /* transmision exitosa */
+		   LEDs_set(LEDG) ;
+           break ;
+           case I2C_STATUS_OK:
+           /* transmision en proceso */
+           break ;
+           case I2C_STATUS_SLAVENAK:
+           case I2C_STATUS_NAK:
+           case I2C_STATUS_ARBLOST:
+           /* Error en la transmision */
+           LEDs_set(LEDB) ;
+           break ;
+           case I2C_STATUS_BUSERR:
+           /* Arbitration has been lost */
+           LEDs_set(LEDR) ;
+           break ;
+       }
     }
 }
 
 void I2C0_IRQHandler(void)
 {
 	if(S_xFER.DIR == READ ){
-        S_status = Rx_SLAVE(I2C0, &S_xFER) ;
+        Rx_SLAVE(I2C0, &S_xFER) ;
         delay() ;
     }
     else{
-        S_status = Tx_SLAVE(I2C0, &S_xFER) ;
+        Tx_SLAVE(I2C0, &S_xFER) ;
         delay() ;
     }
 }
 
 void main(void)
 {
-	LEDs_init() ;
-	TECs_init() ;
-
-	init_TEC_interrupt(TEC1) ;
-	init_TEC_interrupt(TEC2) ;
-	init_TEC_interrupt(TEC3) ;
-	init_TEC_interrupt(TEC4) ;
-
-	I2C_PIN_init(I2C0_ID) ;
-	I2C_CLK_init(I2C0) ;
-	init_I2C_interrupt(I2C0_ID) ;
-	I2C_PIN_init(I2C1_ID) ;
-	I2C_CLK_init(I2C1) ;
-	init_I2C_interrupt(I2C1_ID) ;
+	Aux_init() ;
+	I2C_init() ;
 
 	while(1){
 		if (SRx_BUFF){
