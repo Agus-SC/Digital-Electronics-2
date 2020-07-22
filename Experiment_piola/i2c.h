@@ -183,25 +183,12 @@ uint32_t get_STATUS(I2C_T *pI2C){
     return (uint32_t) pI2C -> STAT & MASK_STAT ;
 }
 
-/* Funcion que devuelve true si se esta transmitiendo/recibiendo y false
-si no lo esta */
-bool is_bus_busy(I2C_T *pI2C){
-   if (pI2C -> CONSET & MASK_STO){
-       return false ;
-   }else{
-      return true ;
-   }
+void delay(void){
+	int i;
+	for(i = 0; i < 1000; i++);
 }
 
-void RST_MSGTx(TRxFER *MSG){
-    MSG -> DATA_Tx = MSG -> RST_DATA_Tx ;
-    MSG -> SIZE_Tx = MSG -> RST_SIZE_Tx ;
-}
 
-void RST_MSGRx(TRxFER *MSG){
-    MSG -> DATA_Rx = MSG -> RST_DATA_Rx ;
-    MSG -> SIZE_Rx = MSG -> RST_SIZE_Rx ;
-}
 
 /*************** Funciones para modo master ***************/
 

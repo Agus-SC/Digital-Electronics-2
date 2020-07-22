@@ -1,16 +1,7 @@
-// #include <i2c_funciona.h>
-// #include <test_leds.h>
-// #include <test_tecs.h>
-// #include <test_int.h>
 #include <i2c.h>
 #include <LED.h>
 #include <TEC.h>
 #include <INT.h>
-
-/*
-Trabajamos con 3.3V y resistencias de pull-up de 2k2.
-Funcionan tanto MasterTX como Master RX.
-*/
 
 TRxFER	M_xFER ;
 TRxFER	S_xFER ;
@@ -128,6 +119,7 @@ void I2C1_IRQHandler(void)
 {
 	if(M_xFER.DIR == WRITE ){
         M_status = Tx_MASTER(I2C1, &M_xFER) ;
+        delay() ;
 //        switch(M_status){
 //            case I2C_STATUS_DONE:
 //            /* transmision exitosa */
@@ -162,8 +154,7 @@ void I2C1_IRQHandler(void)
     }
     else{
         M_status = Rx_MASTER(I2C1, &M_xFER) ;
-        int i = 0;
-        for (i=0;i<1000;i++);
+        delay() ;
 //        switch(M_status){
 //            case I2C_STATUS_DONE:
 //            /* transmision exitosa */
@@ -189,11 +180,11 @@ void I2C0_IRQHandler(void)
 {
 	if(S_xFER.DIR == READ ){
         S_status = Rx_SLAVE(I2C0, &S_xFER) ;
+        delay() ;
     }
     else{
         S_status = Tx_SLAVE(I2C0, &S_xFER) ;
-        int i = 0;
-        for (i=0;i<1000;i++);
+        delay() ;
     }
 }
 
